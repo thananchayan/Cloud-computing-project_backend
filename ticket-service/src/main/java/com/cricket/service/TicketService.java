@@ -3,6 +3,7 @@ package com.cricket.service;
 import com.cricket.dto.request.TicketRequest;
 import com.cricket.dto.response.ContentResponse;
 import com.cricket.dto.response.Match;
+import com.cricket.dto.response.TicketBookedEvent;
 import com.cricket.dto.response.TicketResponse;
 import com.cricket.entity.Ticket;
 import com.cricket.repo.TicketRepository;
@@ -86,6 +87,25 @@ public class TicketService {
     ticket.setStatus("BOOKED");
 
     Ticket saved = ticketRepository.save(ticket);
+
+    // Build the event
+    var event = new TicketBookedEvent();
+    event.setTicketId(saved.getId());
+    event.setMatchId(saved.getMatchId());
+    event.setUserEmail(saved.getUserEmail());
+    event.setSeatNumber(saved.getSeatNumber());
+    event.setStatus(saved.getStatus());
+
+// Forward the same Authorization header received from the client
+    webClientBuilder.build()
+        .post()
+        .uri("http://notification-service/notifications/ticket-booked")
+        .header("Authorization", authHeader)
+        .bodyValue(event)
+        .retrieve()
+        .toBodilessEntity()
+        .block();
+
 
     return new ContentResponse<>(
         "Ticket",
