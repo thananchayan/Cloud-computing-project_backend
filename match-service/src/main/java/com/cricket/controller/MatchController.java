@@ -63,16 +63,13 @@ public class MatchController {
     );
   }
 
+  // MatchController.java
   @PutMapping("/{id}/reduce")
   public ResponseEntity<String> reduceSeats(@PathVariable Long id, @RequestParam int count) {
-    Match match = matchRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("Match not found with id: " + id));
-    if (match.getAvailableSeats() < count) {
-      return ResponseEntity.badRequest().body("Not enough seats available");
-    }
-    match.setAvailableSeats(match.getAvailableSeats() - count);
-    matchRepository.save(match);
+    int updated = matchRepository.tryReserve(id, count);
+    if (updated == 0) return ResponseEntity.badRequest().body("Not enough seats available");
     return ResponseEntity.ok("Seats reduced");
   }
+
 
 }

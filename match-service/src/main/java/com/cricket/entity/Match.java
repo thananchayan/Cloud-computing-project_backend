@@ -31,6 +31,7 @@ public class Match {
   private String format; // e.g., T20, ODI, Test
   private Integer totalSeats;
   private Integer availableSeats;
-  private double ticketPrice;
+  private double price;
   private String description;
+  private String imageUrl;
 }

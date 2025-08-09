@@ -25,7 +25,8 @@ public class MatchService {
     newMatch.setTotalSeats(match.getTotalSeats());
     newMatch.setAvailableSeats(match.getTotalSeats());
     newMatch.setDescription(match.getDescription());
-    newMatch.setTicketPrice(match.getPrice());
+    newMatch.setPrice(match.getPrice());
+    newMatch.setImageUrl(match.getImageUrl());
 
     matchRepository.save(newMatch);
     return new ContentResponse<>(
@@ -68,8 +69,10 @@ public class MatchService {
     match.setLocation(matchDetails.getLocation());
     match.setMatchDate(matchDetails.getMatchDate());
     match.setTime(matchDetails.getTime());
+    match.setPrice(matchDetails.getPrice());
     match.setFormat(matchDetails.getFormat());
     match.setTotalSeats(matchDetails.getTotalSeats());
+    match.setImageUrl(matchDetails.getImageUrl());
     match.setAvailableSeats(match.getAvailableSeats());
     match.setDescription(matchDetails.getDescription());
     matchRepository.save(match);

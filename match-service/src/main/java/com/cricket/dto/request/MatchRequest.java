@@ -3,6 +3,7 @@ package com.cricket.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.time.LocalDateTime;
 import lombok.Data;
 
@@ -21,10 +22,14 @@ public class MatchRequest {
   @NotBlank(message = "Format is required")
   private String format;      // e.g., T20, ODI, Test
   @NotNull(message = "Total seats are required")
+  @Positive
   private Integer totalSeats;
   @NotBlank(message = "Description is required")
   private String description;
   @NotNull(message = "Price is required")
+  @Positive
   private double price;
+  @NotBlank(message = "Image URL is required")
+  private String imageUrl;
 
 }
