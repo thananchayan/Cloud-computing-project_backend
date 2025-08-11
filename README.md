@@ -6,3 +6,4 @@ This project contains the following services:
 - user-service
 - match-service
 - ticket-service
+- notification-service
