@@ -60,6 +60,9 @@ public class TicketService {
     if (matchResponse.getData().getAvailableSeats() < request.getSeatNumber()) {
       throw new IllegalArgumentException("Not enough seats available");
     }
+    String matchName =
+        matchResponse.getData().getTeamA() + " vs " + matchResponse.getData().getTeamB();
+
 
     try {
       webClientBuilder.build()
@@ -90,8 +93,8 @@ public class TicketService {
 
     // Build the event
     var event = new TicketBookedEvent();
-    event.setTicketId(saved.getId());
-    event.setMatchId(saved.getMatchId());
+    event.setMatchName(matchName);
+    event.setDescription(matchResponse.getData().getDescription());
     event.setUserEmail(saved.getUserEmail());
     event.setSeatNumber(saved.getSeatNumber());
     event.setStatus(saved.getStatus());
@@ -105,7 +108,6 @@ public class TicketService {
         .retrieve()
         .toBodilessEntity()
         .block();
-
 
     return new ContentResponse<>(
         "Ticket",

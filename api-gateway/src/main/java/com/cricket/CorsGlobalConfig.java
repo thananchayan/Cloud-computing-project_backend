@@ -13,6 +13,7 @@ public class CorsGlobalConfig {
   public CorsWebFilter corsWebFilter() {
     CorsConfiguration corsConfig = new CorsConfiguration();
     corsConfig.addAllowedOrigin("http://localhost:3000"); // React frontend
+    corsConfig.addAllowedOrigin("http://localhost:3001"); // React frontend
     corsConfig.addAllowedMethod("*"); // GET, POST, PUT, DELETE
     corsConfig.addAllowedHeader("*"); // Authorization, Content-Type
     corsConfig.setAllowCredentials(true);
