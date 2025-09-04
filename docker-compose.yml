@@ -1,0 +1,113 @@
+version: "3.9"
+
+services:
+  eureka:
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    image: eureka-server:1.0
+    container_name: eureka
+    environment:
+      - SERVER_PORT=8761
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
+      - EUREKA_CLIENT_FETCH_REGISTRY=false
+    ports:
+      - "8761:8761"
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    image: api-gateway:1.0
+    container_name: api-gateway
+    depends_on: [eureka]
+    environment:
+      - SERVER_PORT=8080
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+      - JWT_SECRET=${JWT_SECRET}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+    ports:
+      - "8080:8080"
+
+  user-service:
+    build:
+      context: ./user-service
+    image: user-service:1.0
+    container_name: user-service
+    depends_on: [eureka]
+    environment:
+      - SERVER_PORT=8081
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://${RDS_ENDPOINT}:5432/cricket
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "8081:8081"
+
+  match-service:
+    build:
+      context: ./match-service
+    image: match-service:1.0
+    container_name: match-service
+    depends_on: [eureka]
+    environment:
+      - SERVER_PORT=8082
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://${RDS_ENDPOINT}:5432/cricket
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "8082:8082"
+
+  ticket-service:
+    build:
+      context: ./ticket-service
+    image: ticket-service:1.0
+    container_name: ticket-service
+    depends_on: [eureka]
+    environment:
+      - SERVER_PORT=8083
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://${RDS_ENDPOINT}:5432/cricket
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "8083:8083"
+
+  notification-service:
+    build:
+      context: ./notification-service
+    image: notification-service:1.0
+    container_name: notification-service
+    depends_on: [eureka]
+    environment:
+      - SERVER_PORT=8084
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - JWT_SECRET=${JWT_SECRET}
+      # optional mail
+      - SPRING_MAIL_HOST=${MAIL_HOST}
+      - SPRING_MAIL_PORT=${MAIL_PORT}
+      - SPRING_MAIL_USERNAME=${MAIL_USER}
+      - SPRING_MAIL_PASSWORD=${MAIL_PASSWORD}
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_CONNECTIONTIMEOUT=5000
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_TIMEOUT=5000
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_WRITETIMEOUT=5000
+    ports:
+      - "8084:8084"
+
+  # Optional: containerized frontend
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #   image: cricket-frontend:1.0
+  #   container_name: cricket-frontend
+  #   ports:
+  #     - "3000:80"
