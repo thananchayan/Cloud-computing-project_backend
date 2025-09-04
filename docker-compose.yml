@@ -1,12 +1,28 @@
 version: "3.9"
 
 services:
-  eureka:
-    build:
-      context: ./eureka-server
-      dockerfile: Dockerfile
-    image: eureka-server:1.0
-    container_name: eureka
+  # Postgres for all services
+  postgres:
+    image: postgres:16
+    container_name: postgres_cloud
+    environment:
+      POSTGRES_USER: master
+      POSTGRES_PASSWORD: masterpwd
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d   # ✅ auto-init
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U master"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Eureka server
+  service-registry:
+    build: ./service-registry
+    container_name: service-registry
     environment:
       - SERVER_PORT=8761
       - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
@@ -14,100 +30,96 @@ services:
     ports:
       - "8761:8761"
 
+  # API Gateway
   api-gateway:
-    build:
-      context: ./api-gateway
-    image: api-gateway:1.0
+    build: ./api-gateway
     container_name: api-gateway
-    depends_on: [eureka]
+    depends_on:
+      - service-registry
     environment:
       - SERVER_PORT=8080
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - JWT_SECRET=${JWT_SECRET}
-      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000
     ports:
       - "8080:8080"
 
+  # User Service
   user-service:
-    build:
-      context: ./user-service
-    image: user-service:1.0
+    build: ./user-service
     container_name: user-service
-    depends_on: [eureka]
+    depends_on:
+      - postgres
+      - service-registry
     environment:
       - SERVER_PORT=8081
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
-      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://${RDS_ENDPOINT}:5432/cricket
-      - SPRING_DATASOURCE_USERNAME=${DB_USER}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/users_db
+      - SPRING_DATASOURCE_USERNAME=users_owner
+      - SPRING_DATASOURCE_PASSWORD=${USERS_DB_PASSWORD}
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - JWT_SECRET=${JWT_SECRET}
     ports:
       - "8081:8081"
 
+  # Match Service
   match-service:
-    build:
-      context: ./match-service
-    image: match-service:1.0
+    build: ./match-service
     container_name: match-service
-    depends_on: [eureka]
+    depends_on:
+      - postgres
+      - service-registry
     environment:
       - SERVER_PORT=8082
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
-      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://${RDS_ENDPOINT}:5432/cricket
-      - SPRING_DATASOURCE_USERNAME=${DB_USER}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/matches_db
+      - SPRING_DATASOURCE_USERNAME=matches_owner
+      - SPRING_DATASOURCE_PASSWORD=${MATCHES_DB_PASSWORD}
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - JWT_SECRET=${JWT_SECRET}
     ports:
       - "8082:8082"
 
+  # Ticket Service
   ticket-service:
-    build:
-      context: ./ticket-service
-    image: ticket-service:1.0
+    build: ./ticket-service
     container_name: ticket-service
-    depends_on: [eureka]
+    depends_on:
+      - postgres
+      - service-registry
     environment:
       - SERVER_PORT=8083
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
-      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://${RDS_ENDPOINT}:5432/cricket
-      - SPRING_DATASOURCE_USERNAME=${DB_USER}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/tickets_db
+      - SPRING_DATASOURCE_USERNAME=tickets_owner
+      - SPRING_DATASOURCE_PASSWORD=${TICKETS_DB_PASSWORD}
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - JWT_SECRET=${JWT_SECRET}
     ports:
       - "8083:8083"
 
+  # Notification Service
   notification-service:
-    build:
-      context: ./notification-service
-    image: notification-service:1.0
+    build: ./notification-service
     container_name: notification-service
-    depends_on: [eureka]
+    depends_on:
+      - postgres
+      - service-registry
     environment:
       - SERVER_PORT=8084
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
-      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/notifications_db
+      - SPRING_DATASOURCE_USERNAME=notifs_owner
+      - SPRING_DATASOURCE_PASSWORD=${NOTIFS_DB_PASSWORD}
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - JWT_SECRET=${JWT_SECRET}
-      # optional mail
-      - SPRING_MAIL_HOST=${MAIL_HOST}
-      - SPRING_MAIL_PORT=${MAIL_PORT}
-      - SPRING_MAIL_USERNAME=${MAIL_USER}
-      - SPRING_MAIL_PASSWORD=${MAIL_PASSWORD}
-      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
-      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
-      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_CONNECTIONTIMEOUT=5000
-      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_TIMEOUT=5000
-      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_WRITETIMEOUT=5000
     ports:
       - "8084:8084"
+  frontend:
+    build:
+      context: ./front-end
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"   # host:container
+    depends_on:
+      - api-gateway
 
-  # Optional: containerized frontend
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #   image: cricket-frontend:1.0
-  #   container_name: cricket-frontend
-  #   ports:
-  #     - "3000:80"
+
+volumes:
+  postgres_data:

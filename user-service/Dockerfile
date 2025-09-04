@@ -5,7 +5,7 @@ ARG JAR_FILE=target/*.jar
 COPY ${JAR_FILE} app.jar
 
 # tunables via env (optional)
-ENV SERVER_PORT=8080
+ENV SERVER_PORT=8081
 ENV JAVA_OPTS="-XX:+UseG1GC -XX:MaxRAMPercentage=75"
 
 EXPOSE ${SERVER_PORT}
