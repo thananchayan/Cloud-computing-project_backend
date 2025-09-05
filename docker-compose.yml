@@ -4,7 +4,7 @@ services:
   # Postgres for all services
   postgres:
     image: postgres:16
-    container_name: postgres_cloud
+#    container_name: postgres_cloud
     environment:
       POSTGRES_USER: master
       POSTGRES_PASSWORD: masterpwd
@@ -22,7 +22,7 @@ services:
   # Eureka server
   service-registry:
     build: ./service-registry
-    container_name: service-registry
+#    container_name: service-registry
     environment:
       - SERVER_PORT=8761
       - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
@@ -33,7 +33,7 @@ services:
   # API Gateway
   api-gateway:
     build: ./api-gateway
-    container_name: api-gateway
+#    container_name: api-gateway
     depends_on:
       - service-registry
     environment:
@@ -64,7 +64,7 @@ services:
   # User Service
   user-service:
     build: ./user-service
-    container_name: user-service
+#    container_name: user-service
     depends_on:
       - postgres
       - service-registry
@@ -76,12 +76,12 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - JWT_SECRET=${JWT_SECRET}
     ports:
-      - "8081:8081"
+      - "8081"
 
   # Match Service
   match-service:
     build: ./match-service
-    container_name: match-service
+#    container_name: match-service
     depends_on:
       - postgres
       - service-registry
@@ -93,12 +93,12 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - JWT_SECRET=${JWT_SECRET}
     ports:
-      - "8082:8082"
+      - "8082"
 
   # Ticket Service
   ticket-service:
     build: ./ticket-service
-    container_name: ticket-service
+#    container_name: ticket-service
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -114,12 +114,12 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - JWT_SECRET=${JWT_SECRET}
     ports:
-      - "8083:8083"
+      - "8083"
 
   # Notification Service
   notification-service:
     build: ./notification-service
-    container_name: notification-service
+#    container_name: notification-service
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -135,7 +135,7 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - JWT_SECRET=${JWT_SECRET}
     ports:
-      - "8084:8084"
+      - "8084"
   frontend:
     build:
       context: ./front-end
