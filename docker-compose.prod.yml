@@ -1,0 +1,90 @@
+version: '3.9'
+
+services:
+  postgres_cloud:
+    image: postgres:15
+    container_name: postgres_cloud
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - cricket-net
+
+  service-registry:
+    image: thananchayan/service-registry:latest
+#    container_name: service-registry
+    depends_on:
+      - postgres_cloud
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    ports:
+      - "8761:8761"
+    networks:
+      - cricket-net
+
+  api-gateway:
+    image: thananchayan/api-gateway:latest
+#    container_name: api-gateway
+    depends_on:
+      - service-registry
+    ports:
+      - "8080:8080"
+    networks:
+      - cricket-net
+
+  user-service:
+    image: thananchayan/user-service:latest
+#    container_name: user-service
+    depends_on:
+      - postgres_cloud
+      - service-registry
+    networks:
+      - cricket-net
+
+  match-service:
+    image: thananchayan/match-service:latest
+#    container_name: match-service
+    depends_on:
+      - postgres_cloud
+      - service-registry
+    networks:
+      - cricket-net
+
+  ticket-service:
+    image: thananchayan/ticket-service:latest
+#    container_name: ticket-service
+    depends_on:
+      - postgres_cloud
+      - service-registry
+      - match-service
+    networks:
+      - cricket-net
+
+  notification-service:
+    image: thananchayan/notification-service:latest
+#    container_name: notification-service
+    depends_on:
+      - service-registry
+    networks:
+      - cricket-net
+
+  frontend:
+    image: thananchayan/cricket-frontend:latest
+#    container_name: cricket-frontend
+    depends_on:
+      - api-gateway
+    ports:
+      - "3000:80"
+    networks:
+      - cricket-net
+
+networks:
+  cricket-net:
+
+volumes:
+  postgres_data:

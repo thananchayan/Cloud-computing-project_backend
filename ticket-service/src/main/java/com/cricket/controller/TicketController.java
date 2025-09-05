@@ -42,4 +42,10 @@ public class TicketController {
   public ContentResponse<List<TicketResponse>> getAllTickets() {
     return ticketService.getAllTickets();
   }
+
+  @GetMapping("/test")
+  public String test() {
+    String instanceId = System.getenv("HOSTNAME"); // Docker container ID
+    return "Response from Ticket Service instance: " + instanceId;
+  }
 }
