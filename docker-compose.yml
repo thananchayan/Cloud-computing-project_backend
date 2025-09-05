@@ -44,6 +44,23 @@ services:
     ports:
       - "8080:8080"
 
+# RabbitMQ for messaging
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Management UI http://localhost:15672  (guest/guest)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
   # User Service
   user-service:
     build: ./user-service
@@ -83,8 +100,12 @@ services:
     build: ./ticket-service
     container_name: ticket-service
     depends_on:
-      - postgres
-      - service-registry
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      service-registry:
+        condition: service_started
     environment:
       - SERVER_PORT=8083
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/tickets_db
@@ -100,8 +121,12 @@ services:
     build: ./notification-service
     container_name: notification-service
     depends_on:
-      - postgres
-      - service-registry
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      service-registry:
+        condition: service_started
     environment:
       - SERVER_PORT=8084
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/notifications_db

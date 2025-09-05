@@ -6,9 +6,11 @@ import com.cricket.dto.response.Match;
 import com.cricket.dto.response.TicketBookedEvent;
 import com.cricket.dto.response.TicketResponse;
 import com.cricket.entity.Ticket;
+import com.cricket.messaging.RabbitConfig;
 import com.cricket.repo.TicketRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -20,6 +22,7 @@ public class TicketService {
 
   private final TicketRepository ticketRepository;
   private final WebClient.Builder webClientBuilder;
+  private final RabbitTemplate rabbitTemplate;
 
 
   public ContentResponse<TicketResponse> bookTicket(String userEmail, TicketRequest request,
@@ -93,21 +96,25 @@ public class TicketService {
 
     // Build the event
     var event = new TicketBookedEvent();
+    event.setMatchId(request.getMatchId());
     event.setMatchName(matchName);
     event.setDescription(matchResponse.getData().getDescription());
     event.setUserEmail(saved.getUserEmail());
     event.setSeatNumber(saved.getSeatNumber());
     event.setStatus(saved.getStatus());
 
+    rabbitTemplate.convertAndSend(RabbitConfig.EXCHANGE, RabbitConfig.ROUTING_KEY, event);
+
+
 // Forward the same Authorization header received from the client
-    webClientBuilder.build()
-        .post()
-        .uri("http://notification-service/notifications/ticket-booked")
-        .header("Authorization", authHeader)
-        .bodyValue(event)
-        .retrieve()
-        .toBodilessEntity()
-        .block();
+//    webClientBuilder.build()
+//        .post()
+//        .uri("http://notification-service/notifications/ticket-booked")
+//        .header("Authorization", authHeader)
+//        .bodyValue(event)
+//        .retrieve()
+//        .toBodilessEntity()
+//        .block();
 
     return new ContentResponse<>(
         "Ticket",
