@@ -1,6 +1,9 @@
 # CricTicketHub Backend ⚡
 
-This repository contains the **Spring Boot Microservices** for CricTicketHub.
+This repository contains the **backend microservices** for the CricTicketHub project.  
+It is built using **Spring Boot**, **Spring Cloud**, and **PostgreSQL**, and follows a microservices architecture.  
+Services include User, Match, Ticket, and Notification, all connected through an API Gateway and registered with Eureka Service Registry.
+
 
 ## 🏗️ Architecture
 
