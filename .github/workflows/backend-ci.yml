@@ -2,9 +2,9 @@ name: Backend CI/CD
 
 on:
   push:
-    branches: [ "ci-cd-pipeline" ]
+    branches: [ "self-signed-cert" ]
   pull_request:
-    branches: [ "ci-cd-pipeline" ]
+    branches: [ "self-signed-cert" ]
 
 jobs:
   build:
